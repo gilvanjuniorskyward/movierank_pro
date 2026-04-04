@@ -27,6 +27,13 @@ body {
 
 /* card login */
 .login-box {
+
+    animation: fadeIn 0.8s ease-in-out;
+
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(20px);}
+    to {opacity: 1; transform: translateY(0);}
+}
     position: relative;
     z-index: 2;
     background: rgba(0,0,0,0.85);
