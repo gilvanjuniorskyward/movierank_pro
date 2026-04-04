@@ -7,7 +7,7 @@ import requests, os
 app = Flask(__name__)
 app.secret_key = 'supersecret'
 
-# ✅ CORREÇÃO DO BANCO (certo para Render + local)
+# ✅ Banco (Render + local)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3')
 
 db = SQLAlchemy(app)
@@ -33,9 +33,15 @@ class Movie(db.Model):
 
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
-    movie_id = db.Column(db.Integer)
+    
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'))
+    
     score = db.Column(db.Integer)
+
+    # 🔥 relacionamento (IMPORTANTE)
+    user = db.relationship('User')
+    movie = db.relationship('Movie')
 
 # -------------------------
 # LOGIN
@@ -46,10 +52,8 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # -------------------------
-# ROTAS
+# HOME
 # -------------------------
-
-from sqlalchemy.orm import joinedload
 
 @app.route('/')
 @login_required
@@ -65,20 +69,23 @@ def index():
         db.desc('avg')
     ).all()
 
-    # pegar avaliações por filme
+    # 🔥 agrupar avaliações por filme
     ratings = Rating.query.all()
 
     ratings_by_movie = {}
     for r in ratings:
-        if r.movie_id not in ratings_by_movie:
-            ratings_by_movie[r.movie_id] = []
-        ratings_by_movie[r.movie_id].append(r)
+        ratings_by_movie.setdefault(r.movie_id, []).append(r)
 
     return render_template(
         'index.html',
         movies=movies,
         ratings_by_movie=ratings_by_movie
     )
+
+# -------------------------
+# LOGIN / REGISTER
+# -------------------------
+
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
@@ -114,22 +121,8 @@ def logout():
     return redirect(url_for('login'))
 
 # -------------------------
-# INIT DB (FUNCIONA NO RENDER)
+# TMDB SEARCH
 # -------------------------
-
-with app.app_context():
-    db.create_all()
-
-# -------------------------
-# RUN LOCAL
-# -------------------------
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-#-------------------
-# Busca filmes
-# ---------------
 
 def search_tmdb(query):
     url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}"
@@ -156,20 +149,48 @@ def add_movie():
     db.session.add(movie)
     db.session.commit()
 
-    return redirect('/')
+    return redirect(url_for('index'))
+
+# -------------------------
+# RATE (CORRIGIDO 🔥)
+# -------------------------
 
 @app.route('/rate/<int:id>', methods=['POST'])
 @login_required
 def rate(id):
-    rating = Rating(
-        user_id=current_user.id,
-        movie_id=id,
-        score=int(request.form['score'])
-    )
 
-    db.session.add(rating)
+    score = int(request.form['score'])
+
+    # 🔥 evita múltiplas notas do mesmo usuário
+    existing = Rating.query.filter_by(
+        user_id=current_user.id,
+        movie_id=id
+    ).first()
+
+    if existing:
+        existing.score = score
+    else:
+        rating = Rating(
+            user_id=current_user.id,
+            movie_id=id,
+            score=score
+        )
+        db.session.add(rating)
+
     db.session.commit()
 
-    return redirect('/')
+    return redirect(url_for('index'))
 
+# -------------------------
+# INIT DB
+# -------------------------
 
+with app.app_context():
+    db.create_all()
+
+# -------------------------
+# RUN LOCAL
+# -------------------------
+
+if __name__ == '__main__':
+    app.run(debug=True)
