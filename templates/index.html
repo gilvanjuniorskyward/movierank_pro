@@ -82,7 +82,7 @@ body {
 <div class="hero" style="background-image: url('https://image.tmdb.org/t/p/original{{movies[0][0].poster}}')">
     <div>
         <h1>{{movies[0][0].title}}</h1>
-        <p>⭐ {{movies[0][1] or 0}}</p>
+        <p>⭐ {{ "%.2f"|format(movies[0][1] or 0) }}</p>
     </div>
 </div>
 {% endif %}
@@ -95,7 +95,7 @@ body {
 <div class="row-scroll">
 {% for m, avg in movies %}
 
-<!-- CARD (CLICÁVEL) -->
+<!-- CARD -->
 <div class="movie-card" data-bs-toggle="modal" data-bs-target="#modal{{m.id}}">
     <img src="https://image.tmdb.org/t/p/w500{{m.poster}}">
 </div>
@@ -114,7 +114,20 @@ body {
 
           <div class="col-md-8">
             <h2>{{m.title}}</h2>
-            <p>⭐{{ "%.2f"|format(avg or 0) }}</p>
+
+            <!-- MÉDIA -->
+            <p>⭐ Média: {{ "%.2f"|format(avg or 0) }}</p>
+
+            <!-- NOTAS DOS USUÁRIOS -->
+            <h6 class="mt-3">Notas dos usuários:</h6>
+
+            {% if m.id in ratings_by_movie %}
+                {% for r in ratings_by_movie[m.id] %}
+                    <p>👤 Usuário {{r.user_id}}: ⭐ {{r.score}}</p>
+                {% endfor %}
+            {% else %}
+                <p>Sem avaliações ainda</p>
+            {% endif %}
 
             <!-- AVALIAR -->
             <form action="/rate/{{m.id}}" method="post">
@@ -122,7 +135,7 @@ body {
               <button class="btn btn-success w-100">Avaliar</button>
             </form>
 
-            <!-- BOTÃO FECHAR -->
+            <!-- FECHAR -->
             <button class="btn btn-secondary mt-2 w-100" data-bs-dismiss="modal">Fechar</button>
 
           </div>
@@ -139,7 +152,7 @@ body {
 
 </div>
 
-<!-- BOOTSTRAP JS (OBRIGATÓRIO) -->
+<!-- BOOTSTRAP JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
