@@ -38,7 +38,12 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    movies = db.session.query(Movie, db.func.avg(Rating.score).label('avg')).outerjoin(Rating).group_by(Movie.id).all()
+ movies = db.session.query(
+    Movie,
+    db.func.avg(Rating.score).label('avg')
+).outerjoin(
+    Rating, Rating.movie_id == Movie.id
+).group_by(Movie.id).order_by(db.desc('avg')).all()
     return render_template('index.html', movies=movies)
 
 @app.route('/login', methods=['GET','POST'])
