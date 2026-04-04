@@ -7,7 +7,7 @@ import requests, os
 app = Flask(__name__)
 app.secret_key = 'supersecret'
 
-# ✅ Banco (Render + local)
+# ✅ Banco
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3')
 
 db = SQLAlchemy(app)
@@ -39,7 +39,6 @@ class Rating(db.Model):
     
     score = db.Column(db.Integer)
 
-    # 🔥 relacionamento (IMPORTANTE)
     user = db.relationship('User')
     movie = db.relationship('Movie')
 
@@ -57,14 +56,34 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # -------------------------
+# TRAILER
+# -------------------------
+
+def get_trailer(movie_title):
+    url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie_title}"
+    data = requests.get(url).json()
+
+    if data.get('results'):
+        movie_id = data['results'][0]['id']
+
+        videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={TMDB_API_KEY}"
+        videos = requests.get(videos_url).json()
+
+        for v in videos.get('results', []):
+            if v['type'] == 'Trailer' and v['site'] == 'YouTube':
+                return f"https://www.youtube.com/embed/{v['key']}"
+
+    return None
+
+# -------------------------
 # HOME
 # -------------------------
 
 @app.route('/')
 @login_required
 def index():
-    labels = [m.title for m, _ in movies]
-values = [round(avg or 0, 2) for _, avg in movies]
+
+    # 🔥 Query principal
     movies = db.session.query(
         Movie,
         db.func.avg(Rating.score).label('avg')
@@ -76,26 +95,35 @@ values = [round(avg or 0, 2) for _, avg in movies]
         db.desc('avg')
     ).all()
 
-    # 🔥 agrupar avaliações por filme
+    # 🔥 ratings por filme
     ratings = Rating.query.all()
-
     ratings_by_movie = {}
+
     for r in ratings:
         ratings_by_movie.setdefault(r.movie_id, []).append(r)
 
-   trailers = {}
+    # 🔥 trailers
+    trailers = {}
+    for m, _ in movies:
+        trailers[m.id] = get_trailer(m.title)
 
-for m, _ in movies:
-    trailers[m.id] = get_trailer(m.title)
+    # 🔥 favoritos do usuário
+    favorites = Favorite.query.filter_by(user_id=current_user.id).all()
+    fav_ids = [f.movie_id for f in favorites]
 
-return render_template(
-    'index.html',
-    movies=movies,
-    ratings_by_movie=ratings_by_movie,
-    trailers=trailers
-    labels=labels,
-values=values
-)
+    # 🔥 gráfico
+    labels = [m.title for m, _ in movies]
+    values = [round(avg or 0, 2) for _, avg in movies]
+
+    return render_template(
+        'index.html',
+        movies=movies,
+        ratings_by_movie=ratings_by_movie,
+        trailers=trailers,
+        favorites=fav_ids,
+        labels=labels,
+        values=values
+    )
 
 # -------------------------
 # LOGIN / REGISTER
@@ -136,7 +164,7 @@ def logout():
     return redirect(url_for('login'))
 
 # -------------------------
-# TMDB SEARCH
+# SEARCH TMDB
 # -------------------------
 
 def search_tmdb(query):
@@ -167,7 +195,7 @@ def add_movie():
     return redirect(url_for('index'))
 
 # -------------------------
-# RATE (CORRIGIDO 🔥)
+# RATE
 # -------------------------
 
 @app.route('/rate/<int:id>', methods=['POST'])
@@ -176,7 +204,6 @@ def rate(id):
 
     score = int(request.form['score'])
 
-    # 🔥 evita múltiplas notas do mesmo usuário
     existing = Rating.query.filter_by(
         user_id=current_user.id,
         movie_id=id
@@ -197,42 +224,8 @@ def rate(id):
     return redirect(url_for('index'))
 
 # -------------------------
-# INIT DB
+# FAVORITE
 # -------------------------
-
-with app.app_context():
-    db.create_all()
-
-# -------------------------
-# RUN LOCAL
-# -------------------------
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-#-------------------------------
-# TRAILER AUTOMÁTICO (TMDB + YouTube)
-#----------------------------------
-def get_trailer(movie_title):
-    url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie_title}"
-    data = requests.get(url).json()
-
-    if data['results']:
-        movie_id = data['results'][0]['id']
-
-        videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={TMDB_API_KEY}"
-        videos = requests.get(videos_url).json()
-
-        for v in videos['results']:
-            if v['type'] == 'Trailer' and v['site'] == 'YouTube':
-                return f"https://www.youtube.com/embed/{v['key']}"
-
-    return None
-
-
-#-------------------------------
-# Favoritar filme
-# -------------------------------
 
 @app.route('/favorite/<int:id>')
 @login_required
@@ -249,11 +242,18 @@ def favorite(id):
         db.session.add(fav)
 
     db.session.commit()
-    return redirect('/')
+    return redirect(url_for('index'))
 
+# -------------------------
+# INIT DB
+# -------------------------
 
-favorites = Favorite.query.filter_by(user_id=current_user.id).all()
-fav_ids = [f.movie_id for f in favorites]
+with app.app_context():
+    db.create_all()
 
+# -------------------------
+# RUN LOCAL
+# -------------------------
 
-favorites=fav_ids
+if __name__ == '__main__':
+    app.run(debug=True)
