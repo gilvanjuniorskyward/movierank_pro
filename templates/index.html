@@ -114,7 +114,7 @@ body {
 
           <div class="col-md-8">
             <h2>{{m.title}}</h2>
-            <p>⭐ {{avg or 0}}</p>
+            <p>⭐{{ "%.2f"|format(avg or 0) }}</p>
 
             <!-- AVALIAR -->
             <form action="/rate/{{m.id}}" method="post">
