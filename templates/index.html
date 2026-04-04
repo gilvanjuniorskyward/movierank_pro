@@ -50,6 +50,10 @@ body {
 
 /* CARD */
 .movie-card {
+    <form action="/rate/{{m.id}}" method="post">
+    <input type="number" name="score" min="1" max="10" class="form-control mb-1" placeholder="Nota">
+    <button class="btn btn-success w-100">Avaliar</button>
+</form>
     min-width: 200px;
     transition: transform 0.3s;
 }
