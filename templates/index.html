@@ -141,7 +141,17 @@ body {
         allowfullscreen>
     </iframe>
 </div>
-{% endif %}      
+{% endif %}     
+
+
+
+ <a href="/favorite/{{m.id}}" class="btn btn-outline-danger w-100 mt-2">
+    {% if m.id in favorites %}
+        ❤️ Remover dos favoritos
+    {% else %}
+        🤍 Favoritar
+    {% endif %}
+</a>             
 
             <!-- AVALIAR -->
             <form action="/rate/{{m.id}}" method="post">
