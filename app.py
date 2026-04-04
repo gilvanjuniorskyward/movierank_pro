@@ -7,7 +7,7 @@ import requests, os
 
 app = Flask(__name__)
 app.secret_key = 'supersecret'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('postgresql://movierankdb_user:eJI0mwxiwO6PUzzUPNehWhSj90zSW96K@dpg-d789soh4tr6s73bve6b0-a/movierankdb')
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
