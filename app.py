@@ -276,3 +276,35 @@ def favorites_page():
     movies = Movie.query.filter(Movie.id.in_(movie_ids)).all()
 
     return render_template('favorites.html', movies=movies)
+
+
+
+# -------------------------
+# Recomendações inteligentes
+# -------------------------
+
+
+@app.route('/recommendations')
+@login_required
+def recommendations():
+
+    # filmes bem avaliados pelo usuário
+    user_ratings = Rating.query.filter_by(user_id=current_user.id).all()
+
+    high_rated_ids = [r.movie_id for r in user_ratings if r.score >= 8]
+
+    if not high_rated_ids:
+        return render_template('recommendations.html', movies=[])
+
+    # pegar títulos desses filmes
+    liked_movies = Movie.query.filter(Movie.id.in_(high_rated_ids)).all()
+
+    # buscar sugestões no TMDB
+    recommendations = []
+
+    for movie in liked_movies:
+        results = search_tmdb(movie.title)
+        for r in results[:2]:  # pega poucos pra não pesar
+            recommendations.append(r)
+
+    return render_template('recommendations.html', movies=recommendations)
