@@ -49,6 +49,8 @@ def load_user(user_id):
 # ROTAS
 # -------------------------
 
+from sqlalchemy.orm import joinedload
+
 @app.route('/')
 @login_required
 def index():
@@ -63,8 +65,20 @@ def index():
         db.desc('avg')
     ).all()
 
-    return render_template('index.html', movies=movies)
+    # pegar avaliações por filme
+    ratings = Rating.query.all()
 
+    ratings_by_movie = {}
+    for r in ratings:
+        if r.movie_id not in ratings_by_movie:
+            ratings_by_movie[r.movie_id] = []
+        ratings_by_movie[r.movie_id].append(r)
+
+    return render_template(
+        'index.html',
+        movies=movies,
+        ratings_by_movie=ratings_by_movie
+    )
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
