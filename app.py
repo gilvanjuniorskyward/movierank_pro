@@ -257,3 +257,22 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+# -------------------------
+# Favoritos
+# -------------------------
+
+
+@app.route('/favorites')
+@login_required
+def favorites_page():
+
+    favs = Favorite.query.filter_by(user_id=current_user.id).all()
+    movie_ids = [f.movie_id for f in favs]
+
+    movies = Movie.query.filter(Movie.id.in_(movie_ids)).all()
+
+    return render_template('favorites.html', movies=movies)
