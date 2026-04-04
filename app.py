@@ -76,11 +76,17 @@ def index():
     for r in ratings:
         ratings_by_movie.setdefault(r.movie_id, []).append(r)
 
-    return render_template(
-        'index.html',
-        movies=movies,
-        ratings_by_movie=ratings_by_movie
-    )
+   trailers = {}
+
+for m, _ in movies:
+    trailers[m.id] = get_trailer(m.title)
+
+return render_template(
+    'index.html',
+    movies=movies,
+    ratings_by_movie=ratings_by_movie,
+    trailers=trailers
+)
 
 # -------------------------
 # LOGIN / REGISTER
@@ -194,3 +200,22 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+#-------------------------------
+# TRAILER AUTOMÁTICO (TMDB + YouTube)
+#----------------------------------
+def get_trailer(movie_title):
+    url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie_title}"
+    data = requests.get(url).json()
+
+    if data['results']:
+        movie_id = data['results'][0]['id']
+
+        videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={TMDB_API_KEY}"
+        videos = requests.get(videos_url).json()
+
+        for v in videos['results']:
+            if v['type'] == 'Trailer' and v['site'] == 'YouTube':
+                return f"https://www.youtube.com/embed/{v['key']}"
+
+    return None
