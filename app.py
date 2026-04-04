@@ -114,16 +114,32 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 #-------------------
-# Aparência Streaming
+# Busca filmes
 # ---------------
 
-movies = db.session.query(
-    Movie,
-    db.func.avg(Rating.score).label('avg')
-).outerjoin(
-    Rating, Rating.movie_id == Movie.id
-).group_by(
-    Movie.id
-).order_by(
-    db.desc('avg')
-).limit(20).all()
+def search_tmdb(query):
+    url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}"
+    return requests.get(url).json().get('results', [])
+
+@app.route('/search', methods=['GET','POST'])
+@login_required
+def search():
+    results = []
+
+    if request.method == 'POST':
+        results = search_tmdb(request.form['query'])
+
+    return render_template('search.html', results=results)
+
+@app.route('/add_movie', methods=['POST'])
+@login_required
+def add_movie():
+    movie = Movie(
+        title=request.form['title'],
+        poster=request.form['poster']
+    )
+
+    db.session.add(movie)
+    db.session.commit()
+
+    return redirect('/')
