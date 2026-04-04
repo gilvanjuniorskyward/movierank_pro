@@ -143,3 +143,19 @@ def add_movie():
     db.session.commit()
 
     return redirect('/')
+
+@app.route('/rate/<int:id>', methods=['POST'])
+@login_required
+def rate(id):
+    rating = Rating(
+        user_id=current_user.id,
+        movie_id=id,
+        score=int(request.form['score'])
+    )
+
+    db.session.add(rating)
+    db.session.commit()
+
+    return redirect('/')
+
+
