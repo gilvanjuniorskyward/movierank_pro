@@ -44,7 +44,8 @@ def index():
 ).outerjoin(
     Rating, Rating.movie_id == Movie.id
 ).group_by(Movie.id).order_by(db.desc('avg')).all()
-    return render_template('index.html', movies=movies)
+
+return render_template('index.html', movies=movies)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
