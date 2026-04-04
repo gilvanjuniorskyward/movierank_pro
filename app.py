@@ -112,3 +112,18 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+#-------------------
+# Aparência Streaming
+# ---------------
+
+movies = db.session.query(
+    Movie,
+    db.func.avg(Rating.score).label('avg')
+).outerjoin(
+    Rating, Rating.movie_id == Movie.id
+).group_by(
+    Movie.id
+).order_by(
+    db.desc('avg')
+).limit(20).all()
