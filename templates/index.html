@@ -1,0 +1,20 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="/static/css/style.css">
+<title>MovieRank</title>
+</head>
+<body>
+<nav>🎬 MovieRank PRO | <a href="/logout">Sair</a></nav>
+<div class="row">
+{% for m, avg in movies %}
+<div class="card">
+<img src="https://image.tmdb.org/t/p/w500{{m.poster}}">
+<p>{{m.title}}</p>
+<p>⭐ {{avg or 0}}</p>
+</div>
+{% endfor %}
+</div>
+</body>
+</html>
