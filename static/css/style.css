@@ -3,6 +3,10 @@ body { background:#141414; color:white; font-family:sans-serif; }
 nav { padding:10px; background:black; }
 .row { display:flex; gap:10px; overflow-x:auto; }
 .card img { width:200px; border-radius:10px; }
+.login-box {
+    background: rgba(0,0,0,0.85);
+    padding: 40px;
+}
 .modal-content {
     border-radius: 15px;
 }
