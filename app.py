@@ -43,6 +43,11 @@ class Rating(db.Model):
     user = db.relationship('User')
     movie = db.relationship('Movie')
 
+class Favorite(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    movie_id = db.Column(db.Integer)
+
 # -------------------------
 # LOGIN
 # -------------------------
@@ -219,3 +224,32 @@ def get_trailer(movie_title):
                 return f"https://www.youtube.com/embed/{v['key']}"
 
     return None
+
+
+#-------------------------------
+# Favoritar filme
+# -------------------------------
+
+@app.route('/favorite/<int:id>')
+@login_required
+def favorite(id):
+    existing = Favorite.query.filter_by(
+        user_id=current_user.id,
+        movie_id=id
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+    else:
+        fav = Favorite(user_id=current_user.id, movie_id=id)
+        db.session.add(fav)
+
+    db.session.commit()
+    return redirect('/')
+
+
+favorites = Favorite.query.filter_by(user_id=current_user.id).all()
+fav_ids = [f.movie_id for f in favorites]
+
+
+favorites=fav_ids
