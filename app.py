@@ -63,6 +63,8 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
+    labels = [m.title for m, _ in movies]
+values = [round(avg or 0, 2) for _, avg in movies]
     movies = db.session.query(
         Movie,
         db.func.avg(Rating.score).label('avg')
@@ -91,6 +93,8 @@ return render_template(
     movies=movies,
     ratings_by_movie=ratings_by_movie,
     trailers=trailers
+    labels=labels,
+values=values
 )
 
 # -------------------------
