@@ -38,9 +38,9 @@ class Rating(db.Model):
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'))
     
     score = db.Column(db.Integer)
+    comment = db.Column(db.String(300))  # 👈 NOVO
 
     user = db.relationship('User')
-    movie = db.relationship('Movie')
 
 class Favorite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -198,11 +198,14 @@ def add_movie():
 # RATE
 # -------------------------
 
+from flask import flash
+
 @app.route('/rate/<int:id>', methods=['POST'])
 @login_required
 def rate(id):
 
     score = int(request.form['score'])
+    comment = request.form.get('comment')  # 👈 novo campo
 
     existing = Rating.query.filter_by(
         user_id=current_user.id,
@@ -211,15 +214,19 @@ def rate(id):
 
     if existing:
         existing.score = score
+        existing.comment = comment
     else:
         rating = Rating(
             user_id=current_user.id,
             movie_id=id,
-            score=score
+            score=score,
+            comment=comment
         )
         db.session.add(rating)
 
     db.session.commit()
+
+    flash("✅ Avaliação enviada com sucesso!")
 
     return redirect(url_for('index'))
 
