@@ -16,7 +16,11 @@ body {
 
 .navbar {
     background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-    
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.3rem;
 }
 
 .hero {
@@ -63,6 +67,22 @@ body {
 .modal-content {
     border-radius: 15px;
 }
+
+.alert {
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+textarea.form-control {
+    background: #333;
+    color: white;
+    border: none;
+}
+
+textarea.form-control:focus {
+    background: #444;
+    color: white;
+}
 </style>
 
 </head>
@@ -70,15 +90,26 @@ body {
 
 <!-- NAVBAR -->
 <nav class="navbar px-4 d-flex justify-content-between">
-  <span class="navbar-brand text-white">🎬Pescotapa Movies&SeriesRank</span>
+  <span class="navbar-brand text-white">🎬 Pescotapa Movies&SeriesRank</span>
 
   <div>
-    <a href="/search" class="btn btn-primary me-2">Buscar Filme</a>
+    <a href="/search" class="btn btn-primary me-2">Buscar</a>
     <a href="/favorites" class="btn btn-warning me-2">❤️ Minha Lista</a>
     <a href="/recommendations" class="btn btn-info me-2">🎯 Recomendações</a>
     <a href="/logout" class="btn btn-danger">Sair</a>
   </div>
 </nav>
+
+<!-- 🔔 MENSAGEM -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="container mt-3">
+      <div class="alert alert-success text-center">
+        {{ messages[0] }}
+      </div>
+    </div>
+  {% endif %}
+{% endwith %}
 
 <!-- HERO -->
 {% if movies|length > 0 %}
@@ -98,6 +129,7 @@ body {
 <div class="row-scroll">
 {% for m, avg in movies %}
 
+<!-- CARD -->
 <div class="movie-card" data-bs-toggle="modal" data-bs-target="#modal{{m.id}}">
     <img src="https://image.tmdb.org/t/p/w500{{m.poster}}">
 </div>
@@ -110,31 +142,49 @@ body {
       <div class="modal-body">
         <div class="row">
 
+          <!-- IMAGEM -->
           <div class="col-md-4">
             <img src="https://image.tmdb.org/t/p/w500{{m.poster}}" class="img-fluid rounded">
           </div>
 
+          <!-- INFO -->
           <div class="col-md-8">
             <h2>{{m.title}}</h2>
 
             <p>⭐ Média: {{ "%.2f"|format(avg or 0) }}</p>
 
-            <!-- NOTAS -->
-            <h6 class="mt-3">Notas dos usuários:</h6>
+            <!-- 💬 AVALIAÇÕES -->
+            <h6 class="mt-3">💬 Avaliações:</h6>
 
             {% if m.id in ratings_by_movie %}
                 {% for r in ratings_by_movie[m.id] %}
+
+                <div class="p-2 mb-2" style="background:#222; border-radius:8px;">
+
                     {% if r.user_id == current_user.id %}
-                        <p class="text-warning">👤 {{r.user.username}} (Você): ⭐ {{r.score}}</p>
+                        <strong class="text-warning">
+                            👤 {{r.user.username}} (Você)
+                        </strong>
                     {% else %}
-                        <p>👤 {{r.user.username}}: ⭐ {{r.score}}</p>
+                        <strong>
+                            👤 {{r.user.username}}
+                        </strong>
                     {% endif %}
+
+                    <p class="mb-1">⭐ {{r.score}}</p>
+
+                    {% if r.comment %}
+                        <p class="text-muted">"{{r.comment}}"</p>
+                    {% endif %}
+
+                </div>
+
                 {% endfor %}
             {% else %}
                 <p>Sem avaliações ainda</p>
             {% endif %}
 
-            <!-- TRAILER -->
+            <!-- 🎬 TRAILER -->
             {% if trailers[m.id] %}
             <div class="mt-3">
                 <iframe width="100%" height="200"
@@ -145,7 +195,7 @@ body {
             </div>
             {% endif %}
 
-            <!-- FAVORITO -->
+            <!-- ❤️ FAVORITO -->
             <a href="/favorite/{{m.id}}" class="btn btn-outline-danger w-100 mt-2">
                 {% if m.id in favorites %}
                     ❤️ Remover dos favoritos
@@ -154,13 +204,21 @@ body {
                 {% endif %}
             </a>
 
-            <!-- AVALIAR -->
+            <!-- ⭐ AVALIAR -->
             <form action="/rate/{{m.id}}" method="post">
-              <input type="number" name="score" min="1" max="10" class="form-control mb-2" placeholder="Sua nota">
-              <button class="btn btn-success w-100">Avaliar</button>
+                <input type="number" name="score" min="1" max="10"
+                       class="form-control mb-2" placeholder="Sua nota">
+
+                <textarea name="comment"
+                          class="form-control mb-2"
+                          placeholder="Escreva seu comentário..."></textarea>
+
+                <button class="btn btn-success w-100">Avaliar</button>
             </form>
 
-            <button class="btn btn-secondary mt-2 w-100" data-bs-dismiss="modal">Fechar</button>
+            <button class="btn btn-secondary mt-2 w-100" data-bs-dismiss="modal">
+                Fechar
+            </button>
 
           </div>
 
